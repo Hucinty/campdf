@@ -1,0 +1,22 @@
+﻿{
+  "name": "Udaan CRT Scanner by Hucinty",
+  "short_name": "UdaanScan",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#faf8f5",
+  "theme_color": "#ffe5ec",
+  "icons": [
+    {
+      "src": "https://dummyimage.com/192x192/ffe5ec/5c5c5c.png&text=Udaan",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://dummyimage.com/512x512/ffe5ec/5c5c5c.png&text=Udaan",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
