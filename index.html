@@ -1,26 +1,28 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner Utility by Hucinty</title>
-    <link rel="manifest" href="manifest.json">
+    <!-- PWA manifest link injected dynamically by JS below -->
+    <link id="manifest-link" rel="manifest" href="">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
-            --bg: #faf8f5;
-            --surface: #ffffff;
-            --text: #5c5c5c;
-            --pastel-pink: #ffe5ec;
-            --pastel-blue: #e5f0ff;
-            --pastel-green: #e5ffe9;
-            --pastel-purple: #f3e5ff;
+            --bg: #ffffff;
+            --surface: #f7f7f7;
+            --text: #000000;
+            --btn-dark: #111111;
+            --btn-mid: #333333;
+            --btn-light: #555555;
+            --btn-accent: #000000;
+            --btn-download: #0056b3; /* Distinct color for download button */
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Helvetica Neue', system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             display: flex;
@@ -31,13 +33,24 @@
         }
 
         h1 {
-            font-size: 2rem;
-            font-weight: 300;
-            letter-spacing: 3px;
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 4px;
             margin-bottom: 2rem;
             text-transform: uppercase;
-            color: #8c8c8c;
+            color: #000000;
             text-align: center;
+            border-bottom: 4px solid #000;
+            padding-bottom: 0.5rem;
+        }
+
+        h1 .brand {
+            display: block;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+            color: #555;
         }
 
         .container {
@@ -46,32 +59,41 @@
             position: relative;
             background: var(--surface);
             padding: 1rem;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
-            margin-bottom: 2rem;
-            border: 1px solid rgba(0,0,0,0.02);
+            border-radius: 0;
+            box-shadow: 12px 12px 0px rgba(0, 0, 0, 1);
+            margin-bottom: 3rem;
+            border: 4px solid #000;
+        }
+
+        .video-wrapper {
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+            border: 2px solid #000;
         }
 
         video {
             width: 100%;
+            height: 100%;
+            object-fit: cover;
             display: block;
-            border-radius: 16px;
-            background: #f0f0f0;
+            transition: filter 0.3s ease;
         }
 
         .hud {
             position: absolute;
-            top: 2rem;
-            left: 2rem;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(4px);
-            color: var(--text);
+            top: 1rem;
+            left: 1rem;
+            background: #000000;
+            color: #ffffff;
             padding: 0.5rem 1.2rem;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            border: 2px solid #fff;
+            z-index: 10;
         }
 
         .controls {
@@ -85,35 +107,46 @@
 
         button {
             flex: 1;
-            min-width: 180px;
+            min-width: 160px;
             padding: 1.2rem;
             font-family: inherit;
             font-size: 1rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            border-radius: 50px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             cursor: pointer;
-            border: none;
-            color: var(--text);
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            border: 3px solid #000;
+            color: #fff;
+            transition: all 0.2s ease;
+            box-shadow: 4px 4px 0px rgba(0,0,0,1);
         }
 
-        #startBtn { background: var(--pastel-blue); }
-        #captureBtn { background: var(--pastel-pink); display: none; }
-        #pdfBtn { background: var(--pastel-green); display: none; }
-        #installBtn { background: var(--pastel-purple); display: none; }
+        #startBtn { background: var(--btn-dark); }
+        #switchBtn { background: var(--btn-mid); display: none; }
+        #filterBtn { background: var(--btn-light); display: none; }
+        #captureBtn { background: #ffffff; color: #000; display: none; }
+        #pdfBtn { background: var(--btn-accent); display: none; }
+        #installBtn { background: var(--btn-download); display: none; }
 
         button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-            filter: brightness(0.97);
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px rgba(0,0,0,1);
+        }
+        
+        #captureBtn:hover:not(:disabled) {
+            background: #f0f0f0;
+        }
+
+        button:active:not(:disabled) {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px rgba(0,0,0,1);
         }
 
         button:disabled {
-            opacity: 0.6;
+            opacity: 0.4;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         canvas { display: none; }
@@ -121,37 +154,75 @@
 </head>
 <body>
 
-    <h1>Udaan Scanner</h1>
+    <h1>Udaan Scan <span class="brand">BY HUCINTY</span></h1>
     
     <div class="container">
-        <video id="camera" autoplay playsinline></video>
-        <div class="hud">PAGES: <span id="pageCount">0</span></div>
+        <div class="video-wrapper">
+            <video id="camera" autoplay playsinline></video>
+            <div class="hud">PAGES: <span id="pageCount">0</span></div>
+        </div>
     </div>
     
     <canvas id="canvas"></canvas>
 
     <div class="controls">
-        <button id="installBtn">Install App</button>
-        <button id="startBtn">Open HD Camera</button>
-        <button id="captureBtn">Capture Page</button>
-        <button id="pdfBtn">Download PDF</button>
+        <button id="installBtn">Download App</button>
+        <button id="startBtn">Open Camera</button>
+        <button id="switchBtn">Flip Cam</button>
+        <button id="filterBtn">Filter: Normal</button>
+        <button id="captureBtn">Capture (A4 Size)</button>
+        <button id="pdfBtn">Save PDF</button>
     </div>
 
     <script>
-        // PWA Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(console.error);
+        // --- Inline PWA Setup ---
+        const manifest = {
+            "name": "Udaan Scan by Hucinty",
+            "short_name": "UdaanScan",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#111111",
+            "icons": [
+                {
+                    "src": "https://dummyimage.com/192x192/000/fff.png&text=Udaan",
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                },
+                {
+                    "src": "https://dummyimage.com/512x512/000/fff.png&text=Udaan",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(manifestBlob));
+
+        const swCode = `
+            self.addEventListener('install', (e) => { self.skipWaiting(); });
+            self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+            self.addEventListener('fetch', (e) => { 
+                e.respondWith(fetch(e.request).catch(() => new Response("Offline mode active")));
             });
+        `;
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
         }
 
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
 
+        // This event only fires if the browser detects a valid PWA setup served over HTTPS
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installBtn.style.display = 'block';
+            installBtn.style.display = 'block'; // Shows the "Download App" button
         });
 
         installBtn.addEventListener('click', async () => {
@@ -164,6 +235,7 @@
                 deferredPrompt = null;
             }
         });
+        // --- End Inline PWA Setup ---
 
         // Scanner Logic
         const video = document.getElementById('camera');
@@ -171,188 +243,229 @@
         const ctx = canvas.getContext('2d');
         
         const startBtn = document.getElementById('startBtn');
+        const switchBtn = document.getElementById('switchBtn');
+        const filterBtn = document.getElementById('filterBtn');
         const captureBtn = document.getElementById('captureBtn');
         const pdfBtn = document.getElementById('pdfBtn');
         const countDisplay = document.getElementById('pageCount');
 
         let capturedImages = [];
+        let currentStream = null;
+        let isFrontCamera = false; 
         
-        const pastelGradients = [
-            ['#fbc2eb', '#a6c1ee'], ['#ffecd2', '#fcb69f'], 
-            ['#cfd9df', '#e2ebf0'], ['#a1c4fd', '#c2e9fb'], 
-            ['#ff9a9e', '#fecfef']
+        const filters = [
+            { name: "Normal", value: "none" },
+            { name: "B&W", value: "grayscale(100%)" },
+            { name: "Document", value: "grayscale(100%) contrast(150%)" },
+            { name: "Sepia", value: "sepia(80%) contrast(110%)" }
         ];
+        let currentFilterIndex = 0;
 
-        const pastelDoodleColors = ['#ffb7b2', '#e2f0cb', '#b5ead7', '#c7ceea', '#ffdac1'];
-
-        function applyCRTEffect(ctx, w, h) {
-            ctx.globalCompositeOperation = 'overlay';
-            ctx.fillStyle = "rgba(128, 128, 128, 0.15)";
-            ctx.fillRect(0, 0, w, h);
-            ctx.globalCompositeOperation = 'source-over';
-
-            ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
-            for (let i = 0; i < h; i += 8) {
-                ctx.fillRect(0, i, w, 3);
-            }
-
-            const vignette = ctx.createRadialGradient(w/2, h/2, w*0.35, w/2, h/2, w*0.85);
-            vignette.addColorStop(0, "rgba(0,0,0,0)");
-            vignette.addColorStop(1, "rgba(0,0,0,0.35)");
-            ctx.fillStyle = vignette;
-            ctx.fillRect(0, 0, w, h);
-            
-            ctx.fillStyle = "rgba(200, 255, 230, 0.04)";
-            ctx.fillRect(0, 0, w, h);
-        }
-
-        function drawDoodleFlower(ctx, x, y, size) {
+        function drawIvyLeaf(ctx, x, y, size, angle, isDark) {
             ctx.save();
             ctx.translate(x, y);
-            ctx.rotate(Math.random() * Math.PI * 2);
+            ctx.rotate(angle);
             
-            ctx.lineWidth = Math.max(2, size * 0.05);
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = "rgba(92, 92, 92, 0.7)"; 
+            ctx.fillStyle = isDark ? "#222222" : "#777777";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = Math.max(1, size * 0.05);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0); 
+            ctx.lineTo(-size * 0.3, -size * 0.3);
+            ctx.lineTo(-size * 0.8, -size * 0.2); 
+            ctx.lineTo(-size * 0.5, -size * 0.6);
+            ctx.lineTo(-size * 0.3, -size * 0.7);
+            ctx.lineTo(0, -size * 1.1); 
+            ctx.lineTo(size * 0.3, -size * 0.7);
+            ctx.lineTo(size * 0.5, -size * 0.6);
+            ctx.lineTo(size * 0.8, -size * 0.2); 
+            ctx.lineTo(size * 0.3, -size * 0.3);
+            ctx.closePath();
             
-            const fillColor = pastelDoodleColors[Math.floor(Math.random() * pastelDoodleColors.length)];
-            ctx.fillStyle = fillColor;
-            
-            const type = Math.floor(Math.random() * 3);
-            
-            if (type === 0) {
-                for(let i=0; i<5; i++) {
-                    ctx.rotate((Math.PI * 2) / 5);
-                    ctx.beginPath();
-                    ctx.ellipse(0, size * 0.4, size * 0.25, size * 0.4, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
-                }
-                ctx.beginPath();
-                ctx.arc(0, 0, size * 0.2, 0, Math.PI * 2);
-                ctx.fillStyle = '#fff9e6'; 
-                ctx.fill();
-                ctx.stroke();
-            } else if (type === 1) {
-                ctx.beginPath();
-                ctx.moveTo(0, size * 0.5); 
-                ctx.quadraticCurveTo(size * 0.5, size * 0.5, size * 0.5, -size * 0.2); 
-                ctx.lineTo(size * 0.2, -size * 0.5); 
-                ctx.lineTo(0, -size * 0.2); 
-                ctx.lineTo(-size * 0.2, -size * 0.5); 
-                ctx.lineTo(-size * 0.5, -size * 0.2); 
-                ctx.quadraticCurveTo(-size * 0.5, size * 0.5, 0, size * 0.5); 
-                ctx.fill();
-                ctx.stroke();
-            } else {
-                ctx.fillStyle = "#e2f0cb"; 
-                ctx.beginPath();
-                ctx.moveTo(0, size * 0.8);
-                ctx.quadraticCurveTo(size * 0.3, 0, 0, -size * 0.8);
-                ctx.stroke();
-                
-                for(let i=0; i<3; i++) {
-                    let yPos = -size * 0.4 + i * (size * 0.45);
-                    ctx.beginPath();
-                    ctx.ellipse(size * 0.15, yPos, size * 0.25, size * 0.1, Math.PI/5, 0, Math.PI*2);
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.ellipse(-size * 0.15, yPos + (size*0.1), size * 0.25, size * 0.1, -Math.PI/5, 0, Math.PI*2);
-                    ctx.fill();
-                    ctx.stroke();
-                }
-            }
+            ctx.fill();
+            ctx.stroke();
             ctx.restore();
         }
 
-        startBtn.addEventListener('click', async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment', 
-                        width: { ideal: 4096 }, 
-                        height: { ideal: 2160 } 
-                    } 
-                });
-                video.srcObject = stream;
-                
-                video.onloadedmetadata = () => {
+        function drawIvyBorder(ctx, w, h) {
+            const margin = Math.max(30, w * 0.04);
+            
+            ctx.lineWidth = Math.max(2, w * 0.002);
+            ctx.strokeStyle = "#000000";
+            ctx.strokeRect(margin, margin, w - margin * 2, h - margin * 2);
+            ctx.strokeRect(margin - 6, margin - 6, w - (margin - 6) * 2, h - (margin - 6) * 2);
+
+            ctx.beginPath();
+            ctx.moveTo(margin, margin + w * 0.15);
+            ctx.bezierCurveTo(margin - w*0.02, margin + w*0.08, margin + w*0.05, margin, margin + w * 0.15, margin);
+            
+            ctx.moveTo(w - margin - w * 0.15, margin);
+            ctx.bezierCurveTo(w - margin, margin, w - margin + w*0.02, margin + w*0.08, w - margin, margin + w * 0.15);
+            
+            ctx.moveTo(w - margin, h - margin - w * 0.15);
+            ctx.bezierCurveTo(w - margin, h - margin, w - margin - w*0.05, h - margin + w*0.02, w - margin - w * 0.15, h - margin);
+            
+            ctx.moveTo(margin + w * 0.15, h - margin);
+            ctx.bezierCurveTo(margin, h - margin, margin - w*0.02, h - margin - w*0.08, margin, h - margin - w * 0.15);
+            ctx.stroke();
+
+            const leafSize = Math.max(20, w * 0.035);
+            
+            const addLeaves = (cx, cy, count, spreadX, spreadY) => {
+                for (let i = 0; i < count; i++) {
+                    let lx = cx + (Math.random() - 0.5) * spreadX;
+                    let ly = cy + (Math.random() - 0.5) * spreadY;
+                    let angle = Math.random() * Math.PI * 2;
+                    let isDark = Math.random() > 0.4;
+                    drawIvyLeaf(ctx, lx, ly, leafSize * (0.6 + Math.random() * 0.6), angle, isDark);
+                }
+            };
+
+            addLeaves(margin, margin, 14, w*0.18, w*0.18);
+            addLeaves(w - margin, margin, 14, w*0.18, w*0.18);
+            addLeaves(margin, h - margin, 14, w*0.18, w*0.18);
+            addLeaves(w - margin, h - margin, 14, w*0.18, w*0.18);
+
+            for (let x = margin + w*0.25; x < w - margin - w*0.25; x += w*0.15) {
+                addLeaves(x, margin, 3, w*0.05, w*0.03); 
+                addLeaves(x, h - margin, 3, w*0.05, w*0.03); 
+            }
+            for (let y = margin + w*0.25; y < h - margin - w*0.25; y += w*0.15) {
+                addLeaves(margin, y, 3, w*0.03, w*0.05); 
+                addLeaves(w - margin, y, 3, w*0.03, w*0.05); 
+            }
+        }
+
+        async function setupVideoStream(stream) {
+            currentStream = stream;
+            video.srcObject = currentStream;
+            video.style.transform = isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)';
+            
+            return new Promise((resolve) => {
+                video.onloadedmetadata = async () => {
                     startBtn.style.display = 'none';
                     captureBtn.style.display = 'block';
+                    switchBtn.style.display = 'block';
+                    filterBtn.style.display = 'block';
+                    resolve();
                 };
-            } catch (err) {
-                alert("Camera access required to scan documents.");
+            });
+        }
+
+        async function initCamera(constraints, fallback = false) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
             }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                await setupVideoStream(stream);
+            } catch (err) {
+                if (err.name === 'NotAllowedError') {
+                    alert("Camera blocked! Please allow camera permissions in your browser settings.");
+                } else if (!fallback) {
+                    try {
+                        const fbStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: isFrontCamera ? 'user' : 'environment' } });
+                        await setupVideoStream(fbStream);
+                    } catch (fbErr) {
+                        alert("Failed to open any camera.");
+                    }
+                }
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            initCamera({ 
+                video: { 
+                    facingMode: 'environment', 
+                    width: { ideal: 4096 }, 
+                    height: { ideal: 2160 } 
+                } 
+            });
+        });
+
+        switchBtn.addEventListener('click', () => {
+            isFrontCamera = !isFrontCamera;
+            initCamera({
+                video: {
+                    facingMode: isFrontCamera ? 'user' : 'environment',
+                    width: { ideal: 4096 },
+                    height: { ideal: 2160 }
+                }
+            }, true);
+        });
+
+        filterBtn.addEventListener('click', () => {
+            currentFilterIndex = (currentFilterIndex + 1) % filters.length;
+            const currentFilter = filters[currentFilterIndex];
+            filterBtn.innerText = `Filter: ${currentFilter.name}`;
+            video.style.filter = currentFilter.value;
         });
 
         captureBtn.addEventListener('click', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const w = canvas.width;
-            const h = canvas.height;
+            // A4 Setup
+            const w = 1200;
+            const h = 1697;
+            canvas.width = w;
+            canvas.height = h;
             
-            ctx.drawImage(video, 0, 0, w, h);
-            
-            applyCRTEffect(ctx, w, h);
-            
-            const [c1, c2] = pastelGradients[Math.floor(Math.random() * pastelGradients.length)];
-            const gradient = ctx.createLinearGradient(0, 0, w, h);
-            gradient.addColorStop(0, c1);
-            gradient.addColorStop(1, c2);
-            
-            const borderThickness = Math.max(16, w * 0.015);
-            ctx.lineWidth = borderThickness;
-            ctx.strokeStyle = gradient;
-            ctx.strokeRect(borderThickness/2, borderThickness/2, w - borderThickness, h - borderThickness);
+            // 1. Background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, w, h);
 
-            const elementCount = 10 + Math.floor(Math.random() * 8);
-            const doodleSize = Math.max(25, w * 0.035);
-            
-            for (let i = 0; i < elementCount; i++) {
-                let ex = Math.random() > 0.5 ? (Math.random() * w) : (Math.random() > 0.5 ? borderThickness * 2 : w - borderThickness * 2);
-                let ey = (ex === borderThickness * 2 || ex === w - borderThickness * 2) ? (Math.random() * h) : (Math.random() > 0.5 ? borderThickness * 2 : h - borderThickness * 2);
-                drawDoodleFlower(ctx, ex, ey, doodleSize);
+            // 2. Inner Frame Math
+            const imgWidth = w * 0.72; 
+            const imgHeight = imgWidth * (4/3); 
+            const imgX = (w - imgWidth) / 2; 
+            const imgY = (h - imgHeight) / 2; 
+
+            const targetRatio = 3 / 4; 
+            let sWidth = video.videoWidth;
+            let sHeight = video.videoHeight;
+            let sx = 0, sy = 0;
+
+            if (sWidth / sHeight > targetRatio) {
+                let newWidth = sHeight * targetRatio;
+                sx = (sWidth - newWidth) / 2;
+                sWidth = newWidth;
+            } else {
+                let newHeight = sWidth / targetRatio;
+                sy = (sHeight - newHeight) / 2;
+                sHeight = newHeight;
             }
 
+            // 3. Draw Camera Image
             ctx.save();
-            ctx.translate(w / 2, h / 2);
-            ctx.rotate(-Math.PI / 6); 
-            ctx.font = `700 ${w * 0.08}px system-ui, sans-serif`; 
-            
-            ctx.fillStyle = "rgba(255, 255, 255, 0.35)"; 
-            ctx.strokeStyle = "rgba(0, 0, 0, 0.05)"; 
-            ctx.lineWidth = Math.max(2, w * 0.002);
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            
-            ctx.strokeText("udaan", 0, 0);
-            ctx.fillText("udaan", 0, 0);
+            if (isFrontCamera) {
+                ctx.translate(imgX + (imgWidth / 2), 0);
+                ctx.scale(-1, 1);
+                ctx.translate(-(imgX + (imgWidth / 2)), 0);
+            }
+            ctx.filter = filters[currentFilterIndex].value;
+            ctx.drawImage(video, sx, sy, sWidth, sHeight, imgX, imgY, imgWidth, imgHeight);
             ctx.restore();
+            ctx.filter = 'none';
 
-            const tagFontSize = Math.max(14, w * 0.02);
-            ctx.font = `500 ${tagFontSize}px system-ui, sans-serif`;
+            // 4. Inner Border Lines
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#000000";
+            ctx.strokeRect(imgX, imgY, imgWidth, imgHeight);
+            ctx.lineWidth = 1;
+            ctx.strokeRect(imgX - 12, imgY - 12, imgWidth + 24, imgHeight + 24);
             
-            const tagText = "By Hucinty";
-            const textMetrics = ctx.measureText(tagText);
-            const paddingX = 16;
-            const paddingY = 10;
-            const pillWidth = textMetrics.width + (paddingX * 2);
-            const pillHeight = tagFontSize + (paddingY * 2);
+            // 5. Outer Ivy Border
+            drawIvyBorder(ctx, w, h);
+
+            // 6. BY HUCINTY Tag positioned directly below the image frame, right-aligned
+            const tagFontSize = Math.max(16, w * 0.02);
+            ctx.font = `800 ${tagFontSize}px 'Helvetica Neue', sans-serif`;
+            ctx.letterSpacing = "4px"; 
+            ctx.fillStyle = "#000000";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "top";
             
-            const tagX = w - pillWidth - borderThickness - 15;
-            const tagY = h - pillHeight - borderThickness - 15;
-            
-            ctx.fillStyle = "rgba(253, 246, 248, 0.85)"; 
-            ctx.beginPath();
-            ctx.roundRect(tagX, tagY, pillWidth, pillHeight, pillHeight / 2);
-            ctx.fill();
-            
-            ctx.fillStyle = "#6b5b60";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(tagText, tagX + (pillWidth / 2), tagY + (pillHeight / 2) + 1);
+            // Draw text 25 pixels below the outer inner-frame line
+            ctx.fillText("BY HUCINTY", imgX + imgWidth + 12, imgY + imgHeight + 25);
 
             capturedImages.push(canvas.toDataURL('image/jpeg', 0.95));
             countDisplay.innerText = capturedImages.length;
@@ -368,21 +481,26 @@
 
             setTimeout(() => {
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
+                const pdf = new jsPDF({ 
+                    orientation: 'portrait', 
+                    unit: 'mm', 
+                    format: 'a4' 
+                });
+                
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
 
                 capturedImages.forEach((imgData, index) => {
-                    if (index > 0) pdf.addPage();
+                    if (index > 0) pdf.addPage('a4', 'portrait');
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
                 });
 
-                pdf.save('Udaan_CRT_Scans_by_Hucinty.pdf');
+                pdf.save('A4_Frames_by_Hucinty.pdf');
 
                 capturedImages = [];
                 countDisplay.innerText = "0";
                 pdfBtn.style.display = 'none';
-                pdfBtn.innerText = "Download PDF";
+                pdfBtn.innerText = "Save PDF";
                 pdfBtn.disabled = false;
                 captureBtn.disabled = false;
             }, 100);
